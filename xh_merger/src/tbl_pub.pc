@@ -1,0 +1,329 @@
+#include "format.h"
+EXEC SQL INCLUDE SQLCA;
+
+/***************************************
+*	临时账户表相关操作
+*	DB_FETCH/DB_UPDATE/DB_SELECT
+***************************************/
+int tblMergereq(short Opcode, struct acctinfo *vpt_acct)
+{
+    switch(Opcode)
+	{
+        case DB_CUR:
+		{
+			EXEC SQL DECLARE acct_req CURSOR FOR
+			SELECT 
+                bank    ,
+                linenum ,
+                nvl(errcode,' '),
+                nvl(flag, ' '),
+                idtype  ,
+                idno    ,
+                name    ,
+                gender  ,
+                hospid  ,
+                bankid  ,
+                nvl(balance,0) ,
+                nvl(stime,' ')   ,
+                nvl(telno,' ')   ,
+                nvl(addr,' ')    ,
+                nvl(txnmsg,' ')
+            FROM
+                tbl_tmp_mergereq_01042900;
+			return sqlca.sqlcode;
+		}
+		case DB_OPEN:
+		{
+			EXEC SQL OPEN acct_req;
+			return sqlca.sqlcode;
+        }   
+		case DB_FETCH:
+		{
+			EXEC SQL FETCH acct_req
+			INTO
+			    :vpt_acct->Bank		,
+                :vpt_acct->LineNum	,
+                :vpt_acct->ErrCode	,
+                :vpt_acct->Flag		,
+                :vpt_acct->IdType	,
+                :vpt_acct->IdNo		,
+                :vpt_acct->Name		,
+                :vpt_acct->Gender	,
+                :vpt_acct->HospId	,
+                :vpt_acct->BankId	,
+                :vpt_acct->Balance	,
+                :vpt_acct->Stime	,
+                :vpt_acct->TelNo	,
+                :vpt_acct->Addr		,
+                :vpt_acct->TxnMsg	;
+			return sqlca.sqlcode;
+		}
+		case DB_CLOSE:
+		{
+			EXEC SQL CLOSE acct_req;
+			return sqlca.sqlcode;
+		}
+		
+		case DB_UPDATE:
+			EXEC SQL UPDATE tbl_tmp_mergereq_01042900                            
+			SET    	errcode = :vpt_acct->ErrCode                          
+			WHERE	/*idtype = :vpt_acct->IdType and*/
+					idno = :vpt_acct->IdNo ;  
+			return sqlca.sqlcode;
+		
+		case DB_SELECT:
+		{
+            EXEC SQL select	
+                bank    ,
+                linenum ,
+                nvl(errcode,' '),
+                nvl(flag, ' '),
+                idtype  ,
+                idno    ,
+                name    ,
+                gender  ,
+                hospid  ,
+                bankid  ,
+                nvl(balance,0) ,
+                nvl(stime,' ')   ,
+                nvl(telno,' ')   ,
+                nvl(addr,' ')    ,
+                nvl(txnmsg,' ')
+			into 
+			    :vpt_acct->Bank		,
+                :vpt_acct->LineNum	,
+                :vpt_acct->ErrCode	,
+                :vpt_acct->Flag		,
+                :vpt_acct->IdType	,
+                :vpt_acct->IdNo		,
+                :vpt_acct->Name		,
+                :vpt_acct->Gender	,
+                :vpt_acct->HospId	,
+                :vpt_acct->BankId	,
+                :vpt_acct->Balance	,
+                :vpt_acct->Stime	,
+                :vpt_acct->TelNo	,
+                :vpt_acct->Addr		,
+                :vpt_acct->TxnMsg
+            from 
+				tbl_tmp_mergereq_01042900
+            where 
+				/*idtype = :vpt_acct->IdType and*/
+                idno = :vpt_acct->IdNo ;
+            return sqlca.sqlcode;
+        }
+		default:
+		{
+			fprintf(stderr,"execution tblMergereq opcode is null\n");
+			return FAIL;
+		}
+	}
+}
+
+
+/********************************
+*	临时关联关系表相关操作
+*	DB_FETCH 
+********************************/
+int tblMergerelareq(short Opcode, struct relinfo *relation)
+{
+    switch(Opcode)
+	{
+		case DB_CUR:
+		{
+            EXEC SQL DECLARE rela_cur CURSOR FOR
+            SELECT	
+				bank,
+				nvl(linenum, 0),
+				nvl(errcode, ' '),
+				nvl(flag, ' '),
+				issbank,
+				idtype,
+				idno,
+				hiscard   
+            FROM 
+				tbl_tmp_mergerelareq_01042900;
+			return sqlca.sqlcode;
+		}
+        case DB_OPEN:
+		{
+            EXEC SQL OPEN rela_cur;
+            return sqlca.sqlcode;
+		}
+        case DB_FETCH:
+		{
+            EXEC SQL FETCH rela_cur INTO
+				:relation->Bank,
+				:relation->LineNum,
+				:relation->ErrCode,
+				:relation->Flag,
+				:relation->IssBank,
+				:relation->IdType,
+				:relation->IdNo,
+				:relation->HisCard;
+            return sqlca.sqlcode;
+		}
+        case DB_CLOSE:
+		{
+            EXEC SQL CLOSE rela_cur;
+            return sqlca.sqlcode;
+		}
+		default:
+		{
+			fprintf(stderr,"execution tblMergerelareq opcode not supported\n");
+			return FAIL;
+		}
+	}
+}
+
+/********************************
+*	交换中心_账户表 相关操作
+*	DB_INSERT/DB_SELECT
+********************************/
+int tblAcct(short Opcode, struct acct_inf *acct)
+{
+	char strsql[256];
+	memset(strsql, 0x00, sizeof(256));
+    switch(Opcode)
+	{
+		case DB_SELECT:          
+            EXEC SQL SELECT	
+					IdType      ,
+					IdNo     ,
+					BankId,
+					unitno,
+					name,
+					gender,
+                    nvl(telno,' '),
+                    nvl(addr,' '),
+					nvl(open_date,' '),
+					nvl(last_mod_date,' '),
+					nvl(state,' ')
+			into 
+					:acct->IdType      ,
+					:acct->IdNo     ,
+					:acct->BankId,
+					:acct->unitno,
+					:acct->name,
+					:acct->gender,
+                    :acct->telno,
+                    :acct->addr,
+                    :acct->open_date,
+                    :acct->last_mod_date,
+                    :acct->state
+            from tbl_acct_inf
+            where /*idtype = :acct->IdType and*/
+                  idno   = :acct->IdNo ;
+			return sqlca.sqlcode;
+		
+		case DB_INSERT:
+			EXEC SQL INSERT	INTO tbl_acct_inf(
+					IdType      ,
+					IdNo     ,
+					BankId,
+					unitno,
+					name,
+					gender,
+                    telno,
+                    addr,
+                    open_date,
+                    last_mod_date,
+                    state)
+			VALUES(
+					:acct->IdType      ,
+					:acct->IdNo     ,
+					:acct->BankId,
+					:acct->unitno,
+					:acct->name,
+					:acct->gender,
+                    :acct->telno,
+                    :acct->addr,
+                    to_char(sysdate, 'YYYYMMDDHH24MISS'),/*:acct->open_date,*/
+                    '',
+                    :acct->state);
+			return sqlca.sqlcode;
+		default:
+			fprintf(stderr,"execution tblAcct opcode is null\n");
+			return FAIL;
+	}
+}
+
+
+/***************************************
+*    交换中心_关联关系表 相关操作
+*	DB_SELECT/DB_INSERT/DB_UPDATE
+***************************************/
+int tblRelation(short Opcode, struct card_join_acct *rel)
+{
+    switch(Opcode)
+	{
+		case DB_SELECT:          
+            EXEC SQL SELECT	
+				IdType      ,
+				IdNo     ,
+				HisCard       ,
+				nvl(BankId,' '),
+				nvl(create_date, ' '),
+				nvl(cancel_date, ' '),
+				nvl(rel_state, ' ')    
+			into 
+				:rel->IdType      ,
+				:rel->IdNo     ,
+				:rel->HisCard       ,
+				:rel->BankId,
+				:rel->create_date,
+				:rel->cancel_date,
+				:rel->rel_state
+            from tbl_card_join_acct
+            where /*idtype = :rel->IdType     and*/
+                  /*idno   = :rel->IdNo       and*/
+                  hiscard= :rel->HisCard ;
+			return sqlca.sqlcode;
+			
+		case DB_INSERT: 
+			/**
+			EXEC SQL INSERT INTO tbl_xxx(empno, ename, deptno)
+			VALUES(:x, :y, :z);
+			**/	
+			EXEC SQL INSERT INTO tbl_card_join_acct(
+				IdType      ,
+				IdNo     ,
+				HisCard       ,
+				BankId,
+				create_date,
+				cancel_date,
+				rel_state)
+			VALUES( 
+				:rel->IdType      ,
+				:rel->IdNo     ,
+				:rel->HisCard       ,
+				nvl(:rel->BankId, ' '),
+				to_char(sysdate, 'YYYYMMDDHH24MISS'),/*nvl(:rel->create_date, ' '),*/
+				nvl(:rel->cancel_date, ' '),
+				nvl(:rel->rel_state, '1'));	
+			return sqlca.sqlcode;
+			
+		case DB_UPDATE:
+			/*
+			sprintf(strsql, "update tbl_xxx set Status=\'0\' where Bank=88888));
+			EXEC SQL EXECUTE IMMEDIATE :strsql;
+			
+			EXEC SQL UPDATE ACCOUNTS                            
+			SET    BALANCE=BALANCE+:trx->amount                            
+			WHERE  ACCOUNT=:trx->to_account;  
+			*/
+			EXEC SQL UPDATE tbl_card_join_acct                            
+			SET 	IdNo = :rel->IdNo , 
+					rel_state = :rel->rel_state,
+					BankId = :rel->BankId
+            WHERE /*idtype = :rel->IdType     and*/
+                  /*idno   = :rel->IdNo       and*/
+                  hiscard= :rel->HisCard ;
+			return sqlca.sqlcode;
+		default:
+			fprintf(stderr,"execution tblRelation opcode not supported\n");
+			return FAIL;
+	}
+}
+
+

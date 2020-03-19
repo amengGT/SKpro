@@ -1,0 +1,35 @@
+EXEC SQL INCLUDE sqlca;
+#include <string.h>
+#include <stdlib.h>
+void DbCommit()
+{
+	EXEC SQL COMMIT WORK;
+}
+
+void DbRollBack()
+{
+	EXEC SQL ROLLBACK WORK;
+}
+
+void DbClose()
+{
+	EXEC SQL COMMIT RELEASE;
+}
+
+int DbConnect()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	char db_name[30];
+	char db_passwd[50];
+    char db_sid[50];
+	EXEC SQL END DECLARE SECTION;
+
+	memset(db_name,0x00,sizeof(db_name));
+	memset(db_passwd,0x00,sizeof(db_passwd));
+    memset(db_sid,0x00,sizeof(db_sid));
+	strcpy(db_name,getenv("DB_USER_NAME"));
+	strcpy(db_passwd,getenv("DB_USER_PWD"));
+    strcpy(db_sid,getenv("ORACLE_SID"));
+	EXEC SQL CONNECT :db_name IDENTIFIED BY :db_passwd USING :db_sid;
+	return  sqlca.sqlcode;
+}

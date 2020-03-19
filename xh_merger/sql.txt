@@ -1,0 +1,81 @@
+fprintf(stdout, "==[%.18s]=======\n", ainfo.IdNo);
+fprintf(stdout, "==[%018d]=======\n", ainfo.balance);
+--shell编程--
+#!/bin/ksh
+export MERGE_HOME="$HOME/xh_merger"
+echo `expr aa21323bb : 'aa\([0-9]*\)b*` -->21323
+`ls *PRELOAD*|grep 01042900-MERGERELAREQ`
+--------------------------------
+df -g 查看用户系统空间使用情况
+sqlplus sktest/sktestrun@prepaid
+quit
+oerr ora 1403
+exp sktest/sktestrun@prepaid GRANTS=Y TABLES=tbl_acct_inf file=./acct.dmp
+exp sktest/sktestrun@prepaid GRANTS=Y TABLES=tbl_card_join_acct file=./rela.dmp
+imp sktest/sktestrun@prepaid IGNORE=Y TABLES=tbl_acct_inf FULL=N file=./acct.dmp
+select to_char(sysdate, 'YYYYMMDDHH24MISS') from dual;
+--账户信息表--
+desc tbl_acct_inf;
+select IDNO,BANKID,STATE,OPEN_DATE from tbl_acct_inf;
+insert into tbl_acct_inf values('','','');
+--关联关系表--
+desc tbl_card_join_acct;
+select HISCARD,BANKID,REL_STATE,CREATE_DATE from tbl_card_join_acct;
+insert into tbl_card_join_acct values('',''
+--账户临时表--
+desc tbl_tmp_mergereq_01042900;
+select idno from tbl_tmp_mergereq_01042900;
+select idno,errcode,name,bankid from tbl_tmp_mergereq_01042900;
+update tbl_tmp_mergereq_01042900 set errcode='';commit;
+--关联关系临时表--
+desc tbl_tmp_mergerelareq_01042900;
+select idno,errcode,hiscard from tbl_tmp_mergerelareq_01042900;
+====================================================================
+--tbl_acct_inf--
+ IDTYPE                                    NOT NULL CHAR(2)
+ IDNO                                      NOT NULL CHAR(20)
+ BANKID                                             CHAR(8)
+ UNITNO                                             CHAR(11)	--开户所在医院
+ NAME                                               CHAR(30)
+ GENDER                                             CHAR(1)
+ TELNO                                              CHAR(11)	--电话
+ ADDR                                               VARCHAR2(100)
+ OPEN_DATE                                          CHAR(14)	--开户时间
+ LAST_MOD_DATE                                      CHAR(14)	--最后一次修改时间
+ STATE                                              CHAR(1)		--账户状态
+--tbl_card_join_acct--
+ IDTYPE                                    NOT NULL CHAR(2)	--
+ IDNO                                      NOT NULL CHAR(20)
+ HISCARD                                   NOT NULL CHAR(30)
+ BANKID                                             CHAR(8)
+ CREATE_DATE                                        CHAR(14)	--创建时间
+ CANCEL_DATE                                        CHAR(14)	--取消时间
+ REL_STATE                                          CHAR(1)		--关联状态
+ 
+=========================================================
+--tbl_tmp_mergereq_01042900--
+	Bank char(8) not null,	--机构号--
+	LineNum number(8),	--错误代码--
+	ErrCode char(2),	--余额变动标记--
+	Flag    char(1),
+	IdType  char(2) not null,
+	IdNo    char(20) not null,
+	Name    char(30) not null,
+	Gender  char(1) not null,
+	HospId  char(11) not null,
+	BankId  char(8) not null,
+	Balance number(12) not null,
+	Stime   char(14) not null,
+	TelNo   char(11),
+	Addr    char(100),
+	TxnMsg  char(200)
+--tbl_tmp_mergerelareq_01042900--
+	Bank    char(8) not null,
+	LineNum number(8),
+	ErrCode char(2),
+	Flag    char(1),
+	IssBank char(8) not null,
+	IdType  char(2) not null,
+	IdNo    char(20) not null,
+	HisCard char(30) not null
+=========================================================
